@@ -1,4 +1,5 @@
 import React from 'react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 const TestResults = ({ testResults }) => {
   if (!testResults) return null;
@@ -17,7 +18,27 @@ const TestResults = ({ testResults }) => {
             {testResults.matches.map((match, index) => (
               <div key={index} className="border border-gray-200 rounded-md p-3">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-medium">{match.testString}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{match.testString}</span>
+                    {/* Exclude Flag Indicator */}
+                    <div className="flex items-center space-x-1">
+                      {match.exclude ? (
+                        <>
+                          <XCircle className="text-red-500" size={16} />
+                          <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                            Excluded
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="text-green-500" size={16} />
+                          <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                            Included
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                   <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                     {match.confidence}% confidence
                   </span>
