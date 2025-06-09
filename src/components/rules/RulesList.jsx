@@ -1,7 +1,7 @@
 import React from 'react';
-import { Settings, Trash2 } from 'lucide-react';
+import { Settings, Trash2, Edit } from 'lucide-react';
 
-const RulesList = ({ rules, onDeleteRule }) => {
+const RulesList = ({ rules, onDeleteRule, onEditRule }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       <div className="p-6 border-b">
@@ -36,14 +36,23 @@ const RulesList = ({ rules, onDeleteRule }) => {
                       ))}
                     </div>
                   )}
-                </div>
-              </div>
-              <button
-                onClick={() => onDeleteRule(rule.encodedTestString)}
-                className="text-red-600 hover:text-red-800 p-1"
-              >
-                <Trash2 size={16} />
-              </button>
+                </div>                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onEditRule(rule)}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="Edit rule"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => onDeleteRule(rule.encodedTestString)}
+                          className="text-red-600 hover:text-red-800 p-1"
+                          title="Delete rule"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
             </div>
           </div>
         ))}

@@ -49,6 +49,38 @@ export const useRules = (showMessage) => {
     }
   }, [showMessage, fetchRules]);
 
+  const updateRule = useCallback(async (originalEncodedTestString, updatedRule) => {
+    setLoading(true);
+    try {
+      // First delete the old rule
+      await fetch(`${API_BASE}/v2/rules/${originalEncodedTestString}`, {
+        method: 'DELETE'
+      });
+      
+      // Then add the updated rule
+      const response = await fetch(`${API_BASE}/v2/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules: [updatedRule] })
+      });
+      const data = await response.json();
+      
+      if (data.createdRules?.length > 0) {
+        showMessage('Rule updated successfully!');
+        await fetchRules();
+        return true;
+      } else {
+        showMessage('Failed to update rule', 'error');
+        setLoading(false);
+        return false;
+      }
+    } catch (err) {
+      showMessage('Failed to update rule', 'error');
+      setLoading(false);
+      return false;
+    }
+  }, [showMessage, fetchRules]);
+
   const deleteRule = useCallback(async (encodedTestString) => {
     setLoading(true);
     try {
@@ -68,6 +100,7 @@ export const useRules = (showMessage) => {
     loading,
     fetchRules,
     addRule,
+    updateRule,
     deleteRule
   };
 };

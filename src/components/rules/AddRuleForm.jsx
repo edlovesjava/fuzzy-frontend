@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit } from 'lucide-react';
 
 const algorithms = [
   'PARTIAL_RATIO', 'TOKEN_SORT_RATIO', 'TOKEN_SET_RATIO', 'WRATIO',
   'PARTIAL_TOKEN_SORT_RATIO', 'PARTIAL_TOKEN_SET_RATIO', 'EXACT_MATCH'
 ];
 
-const AddRuleForm = ({ onAddRule, loading }) => {
-  const [newRule, setNewRule] = useState({
+const AddRuleForm = ({ onAddRule, onUpdateRule, loading, editingRule, onCancelEdit }) => {
+  const [rule, setRule] = useState({
     testString: '',
     minConfidence: 80,
     fuzzyAlgorithmToUse: 'WRATIO',
@@ -15,26 +15,20 @@ const AddRuleForm = ({ onAddRule, loading }) => {
     enabled: true
   });
 
-  const addTagsToRule = (tagString) => {
-    if (!tagString.trim()) return;
-    const tags = tagString.split(',').map(t => t.trim()).filter(t => t);
-    setNewRule(prev => ({
-      ...prev,
-      tagsToApply: [...new Set([...prev.tagsToApply, ...tags])]
-    }));
-  };
+  const isEditing = !!editingRule;
 
-  const removeTag = (tagToRemove) => {
-    setNewRule(prev => ({
-      ...prev,
-      tagsToApply: prev.tagsToApply.filter(tag => tag !== tagToRemove)
-    }));
-  };
-
-  const handleSubmit = async () => {
-    const success = await onAddRule(newRule);
-    if (success) {
-      setNewRule({
+  // Effect to populate form when editing
+  useEffect(() => {
+    if (editingRule) {
+      setRule({
+        testString: editingRule.testString || '',
+        minConfidence: editingRule.minConfidence || 80,
+        fuzzyAlgorithmToUse: editingRule.fuzzyAlgorithmToUse || 'WRATIO',
+        tagsToApply: editingRule.tagsToApply || [],
+        enabled: editingRule.enabled !== undefined ? editingRule.enabled : true
+      });
+    } else {
+      setRule({
         testString: '',
         minConfidence: 80,
         fuzzyAlgorithmToUse: 'WRATIO',
@@ -42,13 +36,53 @@ const AddRuleForm = ({ onAddRule, loading }) => {
         enabled: true
       });
     }
+  }, [editingRule]);
+
+  const addTagsToRule = (tagString) => {
+    if (!tagString.trim()) return;
+    const tags = tagString.split(',').map(t => t.trim()).filter(t => t);
+    setRule(prev => ({
+      ...prev,
+      tagsToApply: [...new Set([...prev.tagsToApply, ...tags])]
+    }));
+  };
+
+  const removeTag = (tagToRemove) => {
+    setRule(prev => ({
+      ...prev,
+      tagsToApply: prev.tagsToApply.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (isEditing) {
+      const success = await onUpdateRule(editingRule.encodedTestString, rule);
+      if (success) {
+        onCancelEdit();
+      }
+    } else {
+      const success = await onAddRule(rule);
+      if (success) {
+        setRule({
+          testString: '',
+          minConfidence: 80,
+          fuzzyAlgorithmToUse: 'WRATIO',
+          tagsToApply: [],
+          enabled: true
+        });
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    onCancelEdit();
   };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
       <h2 className="text-lg font-semibold mb-4 flex items-center">
-        <Plus className="mr-2" size={20} />
-        Add New Rule
+        {isEditing ? <Edit className="mr-2" size={20} /> : <Plus className="mr-2" size={20} />}
+        {isEditing ? 'Edit Rule' : 'Add New Rule'}
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,8 +92,8 @@ const AddRuleForm = ({ onAddRule, loading }) => {
           </label>
           <input
             type="text"
-            value={newRule.testString}
-            onChange={(e) => setNewRule(prev => ({ ...prev, testString: e.target.value }))}
+            value={rule.testString}
+            onChange={(e) => setRule(prev => ({ ...prev, testString: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter test string..."
           />
@@ -70,8 +104,8 @@ const AddRuleForm = ({ onAddRule, loading }) => {
             Algorithm
           </label>
           <select
-            value={newRule.fuzzyAlgorithmToUse}
-            onChange={(e) => setNewRule(prev => ({ ...prev, fuzzyAlgorithmToUse: e.target.value }))}
+            value={rule.fuzzyAlgorithmToUse}
+            onChange={(e) => setRule(prev => ({ ...prev, fuzzyAlgorithmToUse: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {algorithms.map(algo => (
@@ -88,8 +122,8 @@ const AddRuleForm = ({ onAddRule, loading }) => {
             type="number"
             min="0"
             max="100"
-            value={newRule.minConfidence}
-            onChange={(e) => setNewRule(prev => ({ ...prev, minConfidence: parseInt(e.target.value) }))}
+            value={rule.minConfidence}
+            onChange={(e) => setRule(prev => ({ ...prev, minConfidence: parseInt(e.target.value) }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -114,11 +148,11 @@ const AddRuleForm = ({ onAddRule, loading }) => {
       </div>
 
       {/* Tags Display */}
-      {newRule.tagsToApply.length > 0 && (
+      {rule.tagsToApply.length > 0 && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Tags:</label>
           <div className="flex flex-wrap gap-2">
-            {newRule.tagsToApply.map(tag => (
+            {rule.tagsToApply.map(tag => (
               <span
                 key={tag}
                 className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md"
@@ -140,8 +174,8 @@ const AddRuleForm = ({ onAddRule, loading }) => {
         <input
           type="checkbox"
           id="enabled"
-          checked={newRule.enabled}
-          onChange={(e) => setNewRule(prev => ({ ...prev, enabled: e.target.checked }))}
+          checked={rule.enabled}
+          onChange={(e) => setRule(prev => ({ ...prev, enabled: e.target.checked }))}
           className="mr-2"
         />
         <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
@@ -149,13 +183,23 @@ const AddRuleForm = ({ onAddRule, loading }) => {
         </label>
       </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? 'Adding...' : 'Add Rule'}
-      </button>
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Update Rule' : 'Add Rule')}
+        </button>
+        {isEditing && (
+          <button
+            onClick={handleCancel}
+            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </div>
   );
 };

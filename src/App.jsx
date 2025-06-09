@@ -19,7 +19,7 @@ const App = () => {
 
   // Use custom hooks for state management
   const { success, error, showMessage } = useMessages();
-  const { rules, loading: rulesLoading, fetchRules, addRule, deleteRule } = useRules(showMessage);
+  const { rules, loading: rulesLoading, fetchRules, addRule, updateRule, deleteRule } = useRules(showMessage);
   const { testNote, setTestNote, testResults, loading: testLoading, testRules } = useTest(showMessage);
   const { cacheKey, setCacheKey, cachedData, loading: cacheLoading, getCacheData } = useCache(showMessage);
 
@@ -43,6 +43,7 @@ const App = () => {
             rules={rules}
             loading={rulesLoading}
             onAddRule={addRule}
+            onUpdateRule={updateRule}
             onDeleteRule={deleteRule}
           />
         )}
